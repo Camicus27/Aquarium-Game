@@ -52,9 +52,9 @@ public class Gold : MonoBehaviour
         float alpha = 1f;
         while (alpha > 0f)
         {
-            alpha -= Time.deltaTime;
+            alpha -= 0.1f;
             sprite.color = new Color(sprite.color.r, sprite.color.g, sprite.color.b, alpha);
-            yield return null;
+            yield return new WaitForFixedUpdate();
         }
         Destroy(gameObject);
     }

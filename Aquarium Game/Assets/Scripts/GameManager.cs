@@ -31,8 +31,6 @@ public class GameManager : MonoBehaviour
     [HideInInspector] public double timeStamp;
     [HideInInspector] public Vector2 spawnBounds;
     // Lists
-     public List<Food> activeFoods;
-     public int maxFood = 1;
      public Dictionary<string, Fish> fishes;
      public Dictionary<string, Fish> utilityFish;
 
@@ -59,7 +57,6 @@ public class GameManager : MonoBehaviour
     void Start()
     {
         spawnBounds = Camera.main.ScreenToWorldPoint(new Vector3(Screen.width, Screen.height, 0f));
-        activeFoods = new List<Food>();
         fishes = new Dictionary<string, Fish>();
         utilityFish = new Dictionary<string, Fish>();
 
@@ -77,6 +74,7 @@ public class GameManager : MonoBehaviour
         DontDestroyOnLoad(goldSpawner);
         DontDestroyOnLoad(fishSpawner);
         DontDestroyOnLoad(foodSpawner);
+        DontDestroyOnLoad(enemySpawner);
     }
 
     /// <summary>
@@ -254,5 +252,23 @@ public class GameManager : MonoBehaviour
         goldSpawner.SpawnGold(goldPrefab, spawnLocation, value);
     }
 
-    
+    public void IncrementFoodSpawnCap()
+    {
+        if (player.gold >= foodSpawner.foodCapUpgradeCost)
+        {
+            player.SpendGold(foodSpawner.foodCapUpgradeCost);
+            foodSpawner.foodCapUpgradeCost += 100;
+            foodSpawner.maxFood++;
+        }
+    }
+
+    public void IncrementFoodQuality()
+    {
+        if (player.gold >= foodSpawner.foodQualityUpgradeCost)
+        {
+            player.SpendGold(foodSpawner.foodQualityUpgradeCost);
+            foodSpawner.foodQualityUpgradeCost += 100;
+            foodSpawner.quality++;
+        }
+    }
 }

@@ -5,20 +5,29 @@ using UnityEngine;
 public class FoodSpawner : MonoBehaviour
 {
     [SerializeField] private GameObject foodPrefab;
+    public List<Food> activeFoods = new List<Food>();
     public bool isSpawningFood;
+    public int maxFood = 1;
+    public int foodCapUpgradeCost = 200;
+    public int foodQualityUpgradeCost = 300;
+    private int foodSpawnCost = 5;
+
+    public int quality = 0;
+    public int hpRecovery = 10;
+    public float growthStrength = 1.10f;
+
 
     private void OnMouseDown()
     {
-        if (isSpawningFood && GameManager.instance.activeFoods.Count < GameManager.instance.maxFood && GameManager.instance.player.gold >= 5)
+        if (isSpawningFood && activeFoods.Count < maxFood && GameManager.instance.player.gold >= foodSpawnCost)
         {
             SpawnFood();
         }
-            
     }
 
     public void SpawnFood()
     {
-        GameManager.instance.player.SpendGold(5);
+        GameManager.instance.player.SpendGold(foodSpawnCost);
 
         // Spawn the food
         GameObject food = Instantiate(foodPrefab);

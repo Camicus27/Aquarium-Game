@@ -11,7 +11,7 @@ public class Player : MonoBehaviour
     public int damage = 30;
     public float attackCooldown = 0.5f;
     public int gold;
-    public int clams;
+    public int sandDollars;
 
     public void EarnGold(int goldAmount)
     {
@@ -25,8 +25,8 @@ public class Player : MonoBehaviour
         GoldDisplay.UpdateDisplay();
     }
 
-    public void EarnClams(int clamAmount)
+    public void EarnSandDollars(int dollarAmount)
     {
-        clams += clamAmount;
+        sandDollars += dollarAmount;
     }
 }

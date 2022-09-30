@@ -9,16 +9,12 @@ public class Food : MonoBehaviour
     private bool despawning;
     private bool hitTrigger;
 
-    public int cost;
-    public int hpRecovery;
-    public float growthStrength = 1.10f;
-
     private void Awake()
     {
         GameManager.instance.PlaySound("DropFood");
         rb = GetComponent<Rigidbody2D>();
         sprite = GetComponent<SpriteRenderer>();
-        GameManager.instance.activeFoods.Add(this);
+        GameManager.instance.foodSpawner.activeFoods.Add(this);
     }
 
     private void Update()
@@ -40,21 +36,21 @@ public class Food : MonoBehaviour
 
     public void OnConsume()
     {
-        GameManager.instance.activeFoods.Remove(this);
+        GameManager.instance.foodSpawner.activeFoods.Remove(this);
         Destroy(gameObject);
     }
 
     private IEnumerator SlowlyDespawn()
     {
-        yield return new WaitForSeconds(.75f);
+        yield return new WaitForSeconds(.2f);
         float alpha = 1f;
         while (alpha > 0f)
         {
-            alpha -= Time.deltaTime;
+            alpha -= 0.1f;
             sprite.color = new Color(sprite.color.r, sprite.color.g, sprite.color.b, alpha);
-            yield return null;
+            yield return new WaitForFixedUpdate();
         }
-        GameManager.instance.activeFoods.Remove(this);
+        GameManager.instance.foodSpawner.activeFoods.Remove(this);
         Destroy(gameObject);
     }
 

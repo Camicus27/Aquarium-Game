@@ -106,7 +106,6 @@ public class Enemy : MonoBehaviour
                     if (tween.IsPlaying()) { tween.Kill(); }
                     isChasingFish = true;
                 }
-
             }
         }
         // Chase current target fish
@@ -220,11 +219,9 @@ public class Enemy : MonoBehaviour
         {
             lastPlayerAttackTime = Time.time;
             health -= GameManager.instance.player.damage;
-            Debug.Log("Enemy hit! -" + GameManager.instance.player.damage + "hp, new enemy hp: " + health);
             // Flash color to portray hit
             StartCoroutine(Hit());
         }
-        
 
         // If the enemy has been killed
         if (health <= 0)
@@ -239,9 +236,9 @@ public class Enemy : MonoBehaviour
         sprite.color = new Color(1, green_blue, green_blue);
         while (green_blue < 1)
         {
-            green_blue += .005f;
+            green_blue += .025f;
             sprite.color = new Color(1, green_blue, green_blue);
-            yield return null;
+            yield return new WaitForFixedUpdate();
         }
     }
 

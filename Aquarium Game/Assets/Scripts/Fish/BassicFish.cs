@@ -48,7 +48,8 @@ public class BassicFish : Fish
         goldValue = 10;
         goldIncrement = 5;
         foodToLevelUp = 5;
-        maxLevel = 8;
+        maxLevel = 5;
+        foodCooldown = 7;
         starvationRate = 27;
 
         base.Start();

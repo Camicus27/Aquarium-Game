@@ -12,7 +12,6 @@ public class Fish : MonoBehaviour
     public SpriteRenderer sprite;
     [SerializeField] private float speed;
     [SerializeField] private float foodTriggerRange;
-    [SerializeField] private float foodCooldown;
     private float lastFoodConsumptionTime;
     private float lastGoldSpawnTime;
     private bool isWandering = true;
@@ -24,7 +23,8 @@ public class Fish : MonoBehaviour
     [HideInInspector] public string fishName;
     [HideInInspector] public string description;
     [HideInInspector] public int health;
-     public int cost;
+    [HideInInspector] public int maxHealth;
+    [HideInInspector] public int cost;
     [HideInInspector] public int goldSpawnRate;
     [HideInInspector] public int goldValue;
     [HideInInspector] public int goldIncrement;
@@ -32,13 +32,14 @@ public class Fish : MonoBehaviour
     [HideInInspector] public int growthLevel;
     [HideInInspector] public int maxLevel;
     [HideInInspector] public int foodEaten;
+    [HideInInspector] public float foodCooldown;
     [HideInInspector] public int starvationRate;
     
 
     protected void Start()
     {
         lastFoodConsumptionTime = Time.time - foodCooldown;
-        lastGoldSpawnTime = Time.time;
+        lastGoldSpawnTime = Time.time + Random.Range(-7.5f, 7.5f);
         rigidBody = GetComponent<Rigidbody2D>();
         Wander();
     }
@@ -96,10 +97,10 @@ public class Fish : MonoBehaviour
         if (!GameManager.instance.enemyPresent)
         {
             // Detect if there is food and this fish can consume food
-            if (GameManager.instance.activeFoods.Count > 0 && Time.time > lastFoodConsumptionTime + foodCooldown)
+            if (GameManager.instance.foodSpawner.activeFoods.Count > 0 && Time.time > lastFoodConsumptionTime + foodCooldown)
             {
                 // Check if this fish is close to a food and chase after it if so
-                foreach (Food f in GameManager.instance.activeFoods)
+                foreach (Food f in GameManager.instance.foodSpawner.activeFoods)
                 {
                     if (Vector3.Distance(f.gameObject.transform.position, transform.position) <= foodTriggerRange)
                     {
@@ -134,15 +135,16 @@ public class Fish : MonoBehaviour
             }
 
             // Gold spawn rate
-            if (!isStarving && Time.time > lastGoldSpawnTime + goldSpawnRate + Random.Range(-0.25f, 5f))
+            if (!isStarving && Time.time > lastGoldSpawnTime + goldSpawnRate)
             {
-                lastGoldSpawnTime = Time.time;
+                lastGoldSpawnTime = Time.time + Random.Range(-7.5f, 7.5f);
                 GameManager.instance.SpawnGold(transform.position + Vector3.down, goldValue);
             }
 
             // Starvation detection
             if (Time.time > lastFoodConsumptionTime + starvationRate)
             {
+                // Start starvation countdown
                 StartCoroutine(Starvation());
                 isStarving = true;
                 lastFoodConsumptionTime = -20;
@@ -158,21 +160,30 @@ public class Fish : MonoBehaviour
         // Check if the trigger is food
         if (collision.gameObject.tag == "Food" && food != null)
         {
-            // Consume the food and stop chasing
-            //StartCoroutine(SlowDown());
+            // Stop chasing and consume the food
             isChasingFood = false;
             food.GetComponent<Food>().OnConsume();
-            GameManager.instance.PlaySound("Slurp_" + Random.Range(1,3));
-            lastFoodConsumptionTime = Time.time;
-            foodEaten++;
-            if ((foodEaten + 1) % foodToLevelUp == 0 && growthLevel < maxLevel)
+
+            // Update states
+            lastFoodConsumptionTime = Time.time + (GameManager.instance.foodSpawner.quality * 2.5f);
+            foodEaten += (GameManager.instance.foodSpawner.quality + 1);
+
+            // Recover health if applicable
+            health += GameManager.instance.foodSpawner.hpRecovery;
+            if (health > maxHealth)
+                health = maxHealth;
+
+            // Check if the food consumed thus far is enough to grow
+            if (foodEaten >= foodToLevelUp && growthLevel < maxLevel)
                 Grow();
 
+            // Continue to wander
             isWandering = true;
             Wander();
 
 
             // Also do some animation of eating the food and some sound effect
+            GameManager.instance.PlaySound("Slurp_" + Random.Range(1, 3));
         }
     }
 
@@ -183,7 +194,10 @@ public class Fish : MonoBehaviour
     {
         // Increase gold drop value
         goldValue += goldIncrement;
+        // Increment level
         growthLevel++;
+        // Reset food counter
+        foodEaten -= foodToLevelUp;
         // Tween a small growth of sprite
         await transform.DOScale(new Vector3(transform.localScale.x + 0.014f, transform.localScale.y + 0.014f), .75f).SetEase(Ease.OutBounce).AsyncWaitForCompletion();
     }
@@ -194,17 +208,13 @@ public class Fish : MonoBehaviour
     private IEnumerator Starvation()
     {
         float time = Time.time;
-        float red = 1;
-        float blue = 1;
+        float red_blue = 1;
 
         while (Time.time < time + starvationRate * .33)
         {
-            // Slowly change to a greenish color
-            if (red > 0.3f)
-            {
-                red -= (Time.deltaTime * 0.05f);
-                blue -= (Time.deltaTime * 0.05f);
-            }
+            // Slowly change to a greenish color  ~12 seconds
+            if (red_blue > 0.3f)
+                red_blue -= .0012f;
 
             // Check if been fed since starting starving
             if (Time.time < lastFoodConsumptionTime + 5)
@@ -213,8 +223,8 @@ public class Fish : MonoBehaviour
                 break;
             }
 
-            sprite.color = new Color(red, 1, blue);
-            yield return null;
+            sprite.color = new Color(red_blue, 1, red_blue);
+            yield return new WaitForFixedUpdate();
         }
 
         // If completes and no longer starving, restore color, otherwise die
@@ -231,8 +241,8 @@ public class Fish : MonoBehaviour
 
     public void OnEnemySpawn()
     {
-        // Give 1 minute leeway for starvation and halt gold spawning for 10 minutes
-        lastGoldSpawnTime = Time.time + 600;
+        // Give 1 minute leeway for starvation and halt gold spawning for 20 minutes
+        lastGoldSpawnTime = Time.time + 1200;
         lastFoodConsumptionTime = Time.time + 60;
 
         // Stop chasing food/wandering
@@ -260,11 +270,15 @@ public class Fish : MonoBehaviour
             isWandering = true;
             Wander();
 
-            lastGoldSpawnTime = Time.time;
-            lastFoodConsumptionTime = Time.time;
+            lastGoldSpawnTime = Time.time + Random.Range(-7.5f, 7.5f);
+            lastFoodConsumptionTime = Time.time - (foodCooldown * .5f);
         }
     }
 
+    public override int GetHashCode()
+    {
+        return name.GetHashCode();
+    }
     public override bool Equals(object other)
     {
         if (other is GameObject)
@@ -277,16 +291,10 @@ public class Fish : MonoBehaviour
         }
         return false;
     }
-
     public static bool operator ==(Fish left, Fish right)
-    {
-        return left.Equals(right);
-    }
-
+    { return left.Equals(right); }
     public static bool operator !=(Fish left, Fish right)
-    {
-        return !(left.Equals(right));
-    }
+    { return !(left.Equals(right)); }
 
     private void OnDestroy()
     {
